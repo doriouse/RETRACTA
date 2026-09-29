@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RETRACTA — Virtual ESP32</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #0b0f19;
+            color: white;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .device {
+            width: 900px;
+            max-width: 92%;
+            padding: 35px;
+
+            background: #111827;
+            border: 1px solid #263244;
+            border-radius: 24px;
+
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .logo {
+            font-size: 30px;
+            font-weight: bold;
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .online {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #34d399;
+            font-size: 14px;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #34d399;
+        }
+
+        .sensors {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .card {
+            padding: 25px;
+            background: #172033;
+            border: 1px solid #263244;
+            border-radius: 18px;
+        }
+
+        .label {
+            color: #94a3b8;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .status-normal {
+            color: #34d399;
+        }
+
+        .status-warning {
+            color: #fbbf24;
+        }
+
+        .buttons {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+
+            background: #2563eb;
+            color: white;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: #3b82f6;
+        }
+
+        .footer {
+            margin-top: 25px;
+            padding-top: 20px;
+
+            border-top: 1px solid #263244;
+
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .sensors,
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="device">
+
+        <div class="header">
+
+            <div>
+                <div class="logo">RETRACTA</div>
+
+                <div class="subtitle">
+                    VIRTUAL ESP32 DEVICE
+                </div>
+            </div>
+
+            <div class="online">
+                <span class="dot"></span>
+                ONLINE
+            </div>
+
+        </div>
+
+
+        <section class="sensors">
+
+            <div class="card">
+                <div class="label">Temperatura</div>
+                <div class="value" id="temperatura">-- °C</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Umidade</div>
+                <div class="value" id="umidade">-- %</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Chuva</div>
+                <div class="value status-normal" id="chuva">--</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Varal</div>
+                <div class="value status-normal" id="varal">--</div>
+            </div>
+
+        </section>
+
+
+        <section class="buttons">
+
+            <button onclick="simularChuva()">
+                SIMULAR CHUVA
+            </button>
+
+            <button onclick="modoAutomatico()">
+                MODO AUTOMÁTICO
+            </button>
+
+            <button onclick="abrirVaral()">
+                ABRIR VARAL
+            </button>
+
+        </section>
+
+
+        <div class="footer">
+            RETRACTA • Sistema inteligente de automação residencial
+        </div>
+
+    </main>
+
+
+    <script>
+
+        async function atualizarStatus() {
+
+            try {
+
+                const resposta = await fetch(
+                    "http://127.0.0.1:8000/status"
+                );
+
+                const dados = await resposta.json();
+
+                document.getElementById("temperatura").textContent =
+                    dados.temperatura + " °C";
+
+                document.getElementById("umidade").textContent =
+                    dados.umidade + " %";
+
+                document.getElementById("chuva").textContent =
+                    dados.chuva ? "SIM" : "NÃO";
+
+                document.getElementById("varal").textContent =
+                    dados.varal.toUpperCase();
+
+                console.log("Status recebido:", dados);
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao conectar com o RETRACTA:",
+                    erro
+                );
+
+            }
+        }
+
+
+        async function simularChuva() {
+
+            try {
+
+                const resposta = await fetch(
+                    "http://127.0.0.1:8000/simulate/rain",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                const dados = await resposta.json();
+
+                console.log("Chuva simulada:", dados);
+
+                await atualizarStatus();
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao simular chuva:",
+                    erro
+                );
+
+            }
+        }
+
+
+        async function modoAutomatico() {
+
+            try {
+
+                const resposta = await fetch(
+                    "http://127.0.0.1:8000/system/auto",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                const dados = await resposta.json();
+
+                console.log("Modo automático:", dados);
+
+                await atualizarStatus();
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao executar modo automático:",
+                    erro
+                );
+
+            }
+        }
+
+
+        async function abrirVaral() {
+
+            try {
+
+                const resposta = await fetch(
+                    "http://127.0.0.1:8000/clothesline/open",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                const dados = await resposta.json();
+
+                console.log("Varal aberto:", dados);
+
+                await atualizarStatus();
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao abrir o varal:",
+                    erro
+                );
+
+            }
+        }
+
+
+        atualizarStatus();
+
+    </script>
+
+</body>
+</html>
